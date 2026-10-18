@@ -417,12 +417,12 @@ const addDays = (d, n) => {
   x.setDate(x.getDate() + n);
   return x;
 };
-const T = (id, name, cat, dur = null) => ({
+const T = (id, name, cat, dur = null, days = null) => ({
   id,
   type: "task",
   name,
   cat,
-  days: null,
+  days,
   dur
 });
 const ex = (id, name, base, inc, unit, opt = {}) => ({
@@ -432,8 +432,23 @@ const ex = (id, name, base, inc, unit, opt = {}) => ({
   inc,
   unit,
   sets: opt.sets || null,
-  side: opt.side || null
+  side: opt.side || null,
+  cap: opt.cap || null
 });
+function progress(e, level) {
+  const baseSets = e.sets || 1;
+  if (!e.cap || e.inc <= 0 || e.cap <= e.base) return {
+    value: e.base + e.inc * level,
+    sets: baseSets
+  };
+  const steps = Math.floor((e.cap - e.base) / e.inc) + 1;
+  const tier = Math.floor(level / steps);
+  const within = level % steps;
+  return {
+    value: e.base + e.inc * within,
+    sets: baseSets + tier
+  };
+}
 const R = (id, name, cat, exercises, days = null) => ({
   id,
   type: "routine",
@@ -442,40 +457,74 @@ const R = (id, name, cat, exercises, days = null) => ({
   days,
   exercises
 });
-const SEED = [T("pinterest", "Épingle Pinterest", "Business"), T("info", "Infographie réseaux", "Business"), T("page", "Une page de livre", "Business"), T("seance", "Une séance de livre", "Business"), T("tiktok", "Post TikTok du jour", "Business"), T("insta", "Post Instagram du jour", "Business"), T("journal", "Journal manifestation / gratitude", "Bien-être"), T("complements", "Compléments alimentaires", "Bien-être"), T("menage", "Ménage (10 min)", "Bien-être", 600), T("automassage", "Automassages (5 min)", "Bien-être", 300), T("mobilite", "Routine mobilité (vidéo 15 min)", "Bien-être", 900), T("visuels", "Exercices visuels (3 min)", "Bien-être", 180), T("visage", "Massage visage HE + regard", "Bien-être"), T("dermaroll", "Dermaroll + massage + HE", "Bien-être"), R("abdos", "Abdos", "Renfo", [ex("ab1", "Gainage", 95, 5, "sec"), ex("ab2", "Crunch", 32, 1, "rep"), ex("ab3", "Obliques", 37, 1, "rep", {
-  side: "/côté"
-}), ex("ab4", "Abs wheel", 12, 1, "rep"), ex("ab5", "Chandelles", 6, 1, "rep")], [0, 2, 4, 6]), R("cou", "Renforcement cou", "Renfo", [ex("c0", "Échauffement rotations", 60, 0, "sec"), ex("c1", "Chin tuck", 15, 1, "rep", {
-  sets: 2
+const SEED = [T("muscuA", "Séance A (muscu)", "Entraînement", null, [0]), T("muscuB", "Séance B (muscu)", "Entraînement", null, [1]), T("muscuC", "Séance C (muscu)", "Entraînement", null, [3]), T("muscuD", "Séance D (muscu)", "Entraînement", null, [4]), T("muscuE", "Séance E (muscu)", "Entraînement", null, [5]), T("course", "Sortie course à pied", "Entraînement", null, [2, 6]), T("zwift", "Vélo Zwift", "Entraînement", null, [4]), T("pinterest", "Épingle Pinterest", "Business"), T("info", "Infographie réseaux", "Business"), T("page", "Une page de livre", "Business"), T("seance", "Une séance de livre", "Business"), T("tiktok", "Post TikTok du jour", "Business"), T("insta", "Post Instagram du jour", "Business"), T("journal", "Journal manifestation / gratitude", "Bien-être"), T("complements", "Compléments alimentaires", "Bien-être"), T("menage", "Ménage (10 min)", "Bien-être", 600), T("automassage", "Automassages (5 min)", "Bien-être", 300), T("mobilite", "Routine mobilité (vidéo 15 min)", "Bien-être", 900), T("visuels", "Exercices visuels (3 min)", "Bien-être", 180), T("visage", "Massage visage HE + regard", "Bien-être"), T("dermaroll", "Dermaroll + massage + HE", "Bien-être"), R("abdos", "Abdos", "Renfo", [ex("ab1", "Gainage", 60, 5, "sec", {
+  cap: 90
+}), ex("ab2", "Crunch", 32, 1, "rep", {
+  cap: 50
+}), ex("ab3", "Obliques", 37, 1, "rep", {
+  side: "/côté",
+  cap: 55
+}), ex("ab4", "Abs wheel", 12, 1, "rep", {
+  cap: 24
+}), ex("ab5", "Chandelles", 6, 1, "rep", {
+  cap: 15
+})], [0, 2, 4, 6]), R("cou", "Renforcement cou", "Renfo", [ex("c0", "Échauffement rotations", 60, 0, "sec"), ex("c1", "Chin tuck", 15, 1, "rep", {
+  sets: 2,
+  cap: 28
 }), ex("c2", "Flexion (rebord lit)", 15, 1, "rep", {
-  sets: 3
+  sets: 3,
+  cap: 28
 }), ex("c3", "Extension (rebord lit)", 15, 1, "rep", {
-  sets: 3
+  sets: 3,
+  cap: 28
 }), ex("c4", "Latéral (rebord lit)", 15, 1, "rep", {
-  sets: 3
+  sets: 3,
+  cap: 28
 }), ex("c5", "Isométrique", 15, 0, "sec", {
   sets: 2,
   side: "/côté"
-})], [0, 2, 4]), R("grip", "Grip / poigne", "Renfo", [ex("g1", "Pince", 32, 1, "rep", {
+})], [0, 2, 4]), R("grip", "Grip / poigne", "Renfo", [ex("g1", "Pince", 28, 1, "rep", {
   sets: 2,
-  side: "/main"
-}), ex("g2", "Œufs (compressions)", 27, 1, "rep", {
+  side: "/main",
+  cap: 40
+}), ex("g2", "Œufs (compressions)", 25, 1, "rep", {
   sets: 2,
-  side: "/main"
-}), ex("g3", "Écarteur de doigts", 27, 1, "rep", {
+  side: "/main",
+  cap: 38
+}), ex("g3", "Écarteur de doigts", 24, 1, "rep", {
   sets: 3,
-  side: "/main"
-}), ex("g4", "Appareil doigt", 17, 1, "rep", {
+  side: "/main",
+  cap: 36
+}), ex("g4", "Appareil doigt", 15, 1, "rep", {
   sets: 2,
-  side: "/main"
-}), ex("g5", "Anneau", 95, 5, "sec", {
-  side: "/main"
-}), ex("g6", "Powerball", 95, 5, "sec", {
-  side: "/main"
-})], [1, 3, 5]), R("machoire", "Mâchoire", "Renfo", [ex("m0", "Échauffement (ouvrir-fermer, latéral…)", 30, 0, "sec"), ex("m1", "Mâche gomme", 80, 5, "sec"), ex("m2", "Isométrique", 15, 1, "sec", {
-  sets: 5
-}), ex("m3", "Langue au palais", 80, 5, "sec"), ex("m4", "Massage & étirements", 60, 0, "sec")], [1, 3, 5]), R("rio", "Éducation de Rio", "Divers", [ex("r1", "Muselière", 3, 1, "fois")])];
-const CATS = ["Business", "Bien-être", "Renfo", "Divers"];
+  side: "/main",
+  cap: 28
+}), ex("g5", "Anneau", 40, 5, "sec", {
+  sets: 2,
+  side: "/main",
+  cap: 70
+}), ex("g6", "Powerball", 40, 5, "sec", {
+  sets: 2,
+  side: "/main",
+  cap: 70
+})], [0, 1, 2, 3, 4]), R("machoire", "Mâchoire", "Renfo", [ex("m0", "Échauffement (ouvrir-fermer, latéral…)", 30, 0, "sec"), ex("m1", "Mâche gomme", 60, 5, "sec", {
+  cap: 90
+}), ex("m2", "Isométrique", 15, 1, "sec", {
+  sets: 5,
+  cap: 25
+}), ex("m3", "Langue au palais", 60, 5, "sec", {
+  cap: 90
+}), ex("m4", "Massage & étirements", 60, 0, "sec")], [0, 2, 4, 6]), R("rio", "Éducation de Rio", "Divers", [ex("r1", "Muselière", 3, 1, "fois")])];
+const CATS = ["Entraînement", "Renfo", "Business", "Bien-être", "Divers"];
 const CAT_META = {
+  "Entraînement": {
+    label: "Entraînement sportif",
+    dot: "#c8894b"
+  },
+  Renfo: {
+    label: "Renforcement",
+    dot: "#5c6b4a"
+  },
   Business: {
     label: "Business & création",
     dot: "#8a9b6e"
@@ -483,10 +532,6 @@ const CAT_META = {
   "Bien-être": {
     label: "Soin & bien-être",
     dot: "#b9a07a"
-  },
-  Renfo: {
-    label: "Renforcement",
-    dot: "#5c6b4a"
   },
   Divers: {
     label: "Divers",
@@ -500,11 +545,12 @@ function fmtTime(s) {
   const r = s % 60;
   return r === 0 ? `${m}'` : `${m}'${String(r).padStart(2, "0")}`;
 }
-function exLabel(e, value) {
+function exLabel(e, value, sets) {
   let core;
   if (e.unit === "sec") core = fmtTime(value);else if (e.unit === "fois") core = `${value} fois`;else core = `${value} rép${value > 1 ? "s" : ""}`;
   if (e.side) core += e.side;
-  if (e.sets) core += ` × ${e.sets} séries`;
+  const s = sets != null ? sets : e.sets;
+  if (s && s > 1) core += ` × ${s} séries`;
   return core;
 }
 function itemDone(item, day) {
@@ -606,6 +652,106 @@ function HeroRing({
     textAnchor: "middle",
     className: "hr-lab"
   }, "sur ", total));
+}
+function treeStage(level) {
+  return Math.max(0, Math.min(6, Math.floor((level || 0) / 6)));
+}
+function Tree({
+  level,
+  size
+}) {
+  const st = treeStage(level);
+  const s = size || 40;
+  const cx = 30;
+  const ground = 56;
+  if (st === 0) {
+    return React.createElement("svg", {
+      width: s,
+      height: s,
+      viewBox: "0 0 60 60",
+      "aria-hidden": "true",
+      className: "tree"
+    }, React.createElement("line", {
+      x1: cx,
+      y1: ground,
+      x2: cx,
+      y2: ground - 10,
+      stroke: "#8a7a5c",
+      strokeWidth: "2.5",
+      strokeLinecap: "round"
+    }), React.createElement("ellipse", {
+      cx: cx - 4,
+      cy: ground - 11,
+      rx: "5",
+      ry: "3.2",
+      fill: "#9fb27e",
+      transform: `rotate(-30 ${cx - 4} ${ground - 11})`
+    }), React.createElement("ellipse", {
+      cx: cx + 4,
+      cy: ground - 12,
+      rx: "5",
+      ry: "3.2",
+      fill: "#8a9b6e",
+      transform: `rotate(30 ${cx + 4} ${ground - 12})`
+    }));
+  }
+  const trunkH = 8 + st * 4;
+  const trunkTop = ground - trunkH;
+  const r = 9 + st * 2.4;
+  return React.createElement("svg", {
+    width: s,
+    height: s,
+    viewBox: "0 0 60 60",
+    "aria-hidden": "true",
+    className: "tree"
+  }, React.createElement("rect", {
+    x: cx - 2,
+    y: trunkTop,
+    width: "4",
+    height: trunkH,
+    rx: "2",
+    fill: "#8a7a5c"
+  }), React.createElement("circle", {
+    cx: cx,
+    cy: trunkTop - r * 0.5,
+    r: r,
+    fill: "#8a9b6e"
+  }), React.createElement("circle", {
+    cx: cx - r * 0.7,
+    cy: trunkTop - r * 0.1,
+    r: r * 0.72,
+    fill: "#9fb27e"
+  }), React.createElement("circle", {
+    cx: cx + r * 0.7,
+    cy: trunkTop - r * 0.15,
+    r: r * 0.72,
+    fill: "#7d8f63"
+  }), React.createElement("circle", {
+    cx: cx,
+    cy: trunkTop - r * 1.1,
+    r: r * 0.78,
+    fill: "#a7b985"
+  }), st >= 4 && React.createElement("circle", {
+    cx: cx - r * 0.3,
+    cy: trunkTop - r * 1.3,
+    r: r * 0.5,
+    fill: "#8a9b6e"
+  }), st >= 3 && React.createElement("circle", {
+    cx: cx + r * 0.55,
+    cy: trunkTop - r * 0.9,
+    r: "2.2",
+    fill: "#c8894b"
+  }), st >= 5 && React.createElement("circle", {
+    cx: cx - r * 0.5,
+    cy: trunkTop - r * 0.4,
+    r: "2.2",
+    fill: "#c8894b"
+  }), st >= 6 && React.createElement("circle", {
+    cx: cx + r * 0.1,
+    cy: trunkTop - r * 1.6,
+    r: "2.2",
+    fill: "#d9a05b"
+  }));
 }
 function StatPill({
   icon,
@@ -1249,7 +1395,10 @@ function RoutineCard({
     className: complete ? "check on" : "check"
   }, complete ? "✓" : ""), React.createElement("span", {
     className: "row-name"
-  }, item.name), React.createElement("span", {
+  }, item.name), React.createElement(Tree, {
+    level: level,
+    size: 34
+  }), React.createElement("span", {
     className: "lvl"
   }, "niv. ", level), React.createElement("span", {
     className: open ? "caret open" : "caret"
@@ -1268,9 +1417,10 @@ function RoutineCard({
   }, item.exercises.filter(e => doneToday[`${item.id}.${e.id}`]).length, " ", "sur ", item.exercises.length, " valid\xE9", item.exercises.filter(e => doneToday[`${item.id}.${e.id}`]).length > 1 ? "s" : ""), React.createElement("ul", {
     className: "exos"
   }, item.exercises.map(e => {
-    const val = e.base + e.inc * effLevel;
-    const next = val + e.inc;
+    const cur = progress(e, effLevel);
+    const nxt = progress(e, effLevel + 1);
     const exDone = !!doneToday[`${item.id}.${e.id}`];
+    const grows = e.inc > 0 && (nxt.value !== cur.value || nxt.sets !== cur.sets);
     return React.createElement("li", {
       key: e.id,
       className: exDone ? "exo-done" : ""
@@ -1282,13 +1432,15 @@ function RoutineCard({
       "aria-label": "Valider l'exercice"
     }, exDone ? "✓" : ""), React.createElement("span", {
       className: "exo-name"
-    }, e.name), React.createElement("span", {
+    }, e.name)), React.createElement("div", {
+      className: "exo-sub"
+    }, React.createElement("span", {
       className: "exo-val"
-    }, exLabel(e, val), e.inc > 0 && React.createElement("span", {
+    }, exLabel(e, cur.value, cur.sets)), grows && React.createElement("span", {
       className: "exo-next"
-    }, " ", "\u2192 ", exLabel(e, next)))), e.unit === "sec" && React.createElement(ExoTimer, {
-      seconds: val,
-      sets: e.sets
+    }, "\u2192 ", exLabel(e, nxt.value, nxt.sets))), e.unit === "sec" && React.createElement(ExoTimer, {
+      seconds: cur.value,
+      sets: cur.sets
     }));
   }))), React.createElement("button", {
     className: complete ? "validate undo" : "validate",
@@ -1458,7 +1610,21 @@ function ProgressView({
     title: x.key
   }))), sel && React.createElement("div", {
     className: "day-detail"
-  }, React.createElement("strong", null, frDate(sel.d)), React.createElement("div", null, sel.total === 0 ? "Jour off (aucune tâche prévue)." : `${sel.done} / ${sel.total} réalisées (${Math.round((sel.ratio || 0) * 100)} %)`)), React.createElement("div", {
+  }, React.createElement("strong", null, frDate(sel.d)), React.createElement("div", null, sel.total === 0 ? "Jour off (aucune tâche prévue)." : `${sel.done} / ${sel.total} réalisées (${Math.round((sel.ratio || 0) * 100)} %)`)), items.filter(i => i.type === "routine").length > 0 && React.createElement(React.Fragment, null, React.createElement("div", {
+    className: "badges-head"
+  }, "Ta for\xEAt"), React.createElement("div", {
+    className: "forest"
+  }, items.filter(i => i.type === "routine").map(i => React.createElement("div", {
+    key: i.id,
+    className: "forest-tree"
+  }, React.createElement(Tree, {
+    level: levels[i.id] || 0,
+    size: 62
+  }), React.createElement("div", {
+    className: "ft-name"
+  }, i.name), React.createElement("div", {
+    className: "ft-lvl"
+  }, "niv. ", levels[i.id] || 0))))), React.createElement("div", {
     className: "badges-head"
   }, "Badges ", React.createElement("span", {
     className: "badges-count"
@@ -1828,6 +1994,12 @@ function ManageView({
     className: "num",
     value: e.inc,
     onChange: ev => updateExo(i.id, e.id, "inc", Number(ev.target.value))
+  })), React.createElement("label", null, "Plafond", React.createElement("input", {
+    type: "number",
+    className: "num",
+    value: e.cap || "",
+    placeholder: "\u2014",
+    onChange: ev => updateExo(i.id, e.id, "cap", ev.target.value ? Number(ev.target.value) : null)
   })), React.createElement("label", null, "Unit\xE9", React.createElement("select", {
     className: "num",
     value: e.unit,
@@ -2137,6 +2309,23 @@ const CSS = `
 .tab.on{box-shadow:none; color:var(--sauge-d);}
 .tab.on svg{color:var(--sauge);}
 .tab.on span{font-weight:600;}
+/* ===== arbres & forêt ===== */
+.tree{flex:0 0 auto;}
+.routine-head .tree{margin-left:auto;}
+.routine-head .lvl{margin-left:8px;}
+.forest{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:6px;}
+.forest-tree{background:linear-gradient(180deg,#f3f5ec,#e9ede0); border:1px solid #e2e5d7;
+  border-radius:16px; padding:10px 6px 8px; text-align:center;}
+.forest-tree .tree{display:block; margin:0 auto;}
+.ft-name{font-size:10.5px; font-weight:600; color:var(--charbon); margin-top:2px; line-height:1.2; overflow-wrap:anywhere;}
+.ft-lvl{font-size:10px; color:var(--sauge-d); font-weight:600;}
+
+/* ===== sous-tâches : cible en sous-ligne (fix chevauchement) ===== */
+.exos li{gap:3px;}
+.exo-top{align-items:center;}
+.exo-sub{display:flex; flex-wrap:wrap; align-items:baseline; gap:3px 8px; padding-left:32px;}
+.exo-val{text-align:left; flex-shrink:1; font-size:13px; font-weight:600; color:var(--sauge-d);}
+.exo-next{font-size:11px; font-weight:500; color:var(--clay);}
 @media (prefers-reduced-motion: reduce){*{transition:none !important;}}
 `;
 const _root = ReactDOM.createRoot(document.getElementById("root"));
